@@ -8,17 +8,40 @@ require 'csv'
 require 'salesforce_bulk_api/concerns/throttling'
 require 'salesforce_bulk_api/job'
 require 'salesforce_bulk_api/connection'
+require 'json'
 
 module SalesforceBulkApi
 
   class Api
     attr_reader :connection
-
-    @@SALESFORCE_API_VERSION = '32.0'
+    BATCH_SLEEP_S = 10
 
     def initialize(client)
-      @connection = SalesforceBulkApi::Connection.new(@@SALESFORCE_API_VERSION, client)
+      @connection = SalesforceBulkApi::Connection.new(client)
       @listeners = { job_created: [] }
+    end
+
+    def synchronous_operation(operation, sobject, data)
+      # kick off the operation
+      res = send(operation, sobject, data, true)
+
+      # wait until the thing finishes
+      job = job_from_id(res["id"][0])
+      status = nil
+      loop do
+        status = job.check_job_status
+        # if we're done, break
+        if status['numberBatchesQueued'].first.to_i == 0 && status['numberBatchesInProgress'].first.to_i == 0
+          break
+        end
+        sleep(BATCH_SLEEP_S)
+      end
+
+      # check the result
+      if status['numberRecordsFailed'].first.to_i > 0
+        fail "Something went wrong in the batch #{operation}. This is the result: #{JSON.pretty_generate(res)}"[0..BATCH_ERROR_MAX_LENGTH] + "...\n a few failed records: #{JSON.pretty_generate(res['batches'].first['response'].select{|r| r['success'] != ['true']})}"[0..BATCH_ERROR_MAX_LENGTH] + "..."
+      end
+      status
     end
 
     def upsert(sobject, records, external_field, get_response = false, send_nulls = false, no_null_list = [], batch_size = 10000, timeout = 1500)
