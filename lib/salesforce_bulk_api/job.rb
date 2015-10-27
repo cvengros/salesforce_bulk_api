@@ -33,9 +33,8 @@ module SalesforceBulkApi
       xml += "</jobInfo>"
 
       path = "job"
-      headers = Hash['Content-Type' => 'application/xml; charset=utf-8']
 
-      response = @connection.post_xml(nil, path, xml, headers)
+      response = @connection.post_xml(path, xml)
       response_parsed = XmlSimple.xml_in(response)
 
       # response may contain an exception, so raise it
@@ -51,17 +50,15 @@ module SalesforceBulkApi
       xml += "</jobInfo>"
 
       path = "job/#{@job_id}"
-      headers = Hash['Content-Type' => 'application/xml; charset=utf-8']
 
-      response = @connection.post_xml(nil, path, xml, headers)
+      response = @connection.post_xml(path, xml)
       XmlSimple.xml_in(response)
     end
 
     def add_query
       path = "job/#{@job_id}/batch/"
-      headers = Hash["Content-Type" => "application/xml; charset=UTF-8"]
 
-      response = @connection.post_xml(nil, path, @records, headers)
+      response = @connection.post_xml(path, @records)
       response_parsed = XmlSimple.xml_in(response)
 
       @batch_ids << response_parsed['id'][0]
@@ -91,8 +88,7 @@ module SalesforceBulkApi
       end
       xml += '</sObjects>'
       path = "job/#{@job_id}/batch/"
-      headers = Hash["Content-Type" => "application/xml; charset=UTF-8"]
-      response = @connection.post_xml(nil, path, xml, headers)
+      response = @connection.post_xml(path, xml)
       response_parsed = XmlSimple.xml_in(response)
       response_parsed['id'][0] if response_parsed['id']
     end
@@ -137,7 +133,7 @@ module SalesforceBulkApi
     def check_job_status
       path = "job/#{@job_id}"
       headers = Hash.new
-      response = @connection.get_request(nil, path, headers)
+      response = @connection.get_request(path, headers)
 
       begin
         response_parsed = XmlSimple.xml_in(response) if response
@@ -153,7 +149,7 @@ module SalesforceBulkApi
       path = "job/#{@job_id}/batch/#{batch_id}"
       headers = Hash.new
 
-      response = @connection.get_request(nil, path, headers)
+      response = @connection.get_request(path, headers)
 
       begin
         response_parsed = XmlSimple.xml_in(response) if response
@@ -203,7 +199,7 @@ module SalesforceBulkApi
       path = "job/#{@job_id}/batch/#{batch_id}/result"
       headers = Hash["Content-Type" => "application/xml; charset=UTF-8"]
 
-      response = @connection.get_request(nil, path, headers)
+      response = @connection.get_request(path, headers)
       response_parsed = XmlSimple.xml_in(response)
       results = response_parsed['result'] unless @operation == 'query'
 
@@ -212,7 +208,7 @@ module SalesforceBulkApi
         path = "job/#{@job_id}/batch/#{batch_id}/result/#{result_id}"
         headers = Hash.new
         headers = Hash["Content-Type" => "application/xml; charset=UTF-8"]
-        response = @connection.get_request(nil, path, headers)
+        response = @connection.get_request(path, headers)
         response_parsed = XmlSimple.xml_in(response)
         results = response_parsed['records']
       end
