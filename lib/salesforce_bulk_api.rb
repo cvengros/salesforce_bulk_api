@@ -15,6 +15,7 @@ module SalesforceBulkApi
   class Api
     attr_reader :connection
     BATCH_SLEEP_S = 10
+    BATCH_ERROR_MAX_LENGTH = 4000
 
     def initialize(client)
       @connection = SalesforceBulkApi::Connection.new(client)
