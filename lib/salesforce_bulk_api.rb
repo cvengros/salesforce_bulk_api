@@ -40,7 +40,13 @@ module SalesforceBulkApi
 
       # check the result
       if status['numberRecordsFailed'].first.to_i > 0
-        fail "Something went wrong in the batch #{operation}. This is the result: #{JSON.pretty_generate(res)}"[0..BATCH_ERROR_MAX_LENGTH] + "...\n a few failed records: #{JSON.pretty_generate(res['batches'].first['response'].select{|r| r['success'] != ['true']})}"[0..BATCH_ERROR_MAX_LENGTH] + "..."
+        message = "Something went wrong in the batch #{operation}. This is the result: #{JSON.pretty_generate(res)}"[0..BATCH_ERROR_MAX_LENGTH] 
+        if res['batches'] && res['batches'] && res['batches'].first && res['batches'].first['response']
+          message += "...\n a few failed records: #{JSON.pretty_generate(res['batches'].first['response'].select{|r| r['success'] != ['true']})}"[0..BATCH_ERROR_MAX_LENGTH] + "..." 
+        else
+          message += "\nFail response: #{JSON.pretty_generate(res)}"
+        end
+        fail message
       end
       status
     end
